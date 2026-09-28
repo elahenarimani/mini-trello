@@ -1,0 +1,45 @@
+.empty-state {
+  display: grid;
+  place-items: center;
+  padding: 70px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 185px;
+  padding: 28px 18px;
+  background: transparent;
+}
+
+.empty-state-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 13px;
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-weight: 800;
+}
+
+.empty-state h2 {
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.empty-state p {
+  max-width: 420px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.empty-state-action {
+  margin-top: 17px;
+}

@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and logs
+.env
+.env.*
+!.env.example
+*.local
+*.log
+logs/
+
+# Local task data (copy tasks.example.json on first setup)
+backend/backend/data/tasks.json
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local agent settings
+.codex/
+.agents/

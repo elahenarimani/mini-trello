@@ -1,0 +1,108 @@
+.column-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 29px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-size: .75rem;
+  font-weight: 750;
+  flex-shrink: 0;
+}
+
+.kanban-column {
+  min-width: 300px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--column);
+  transition: border-color .16s, box-shadow .16s, background .16s;
+}
+
+.kanban-column.drop-target {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--column) 88%, var(--primary));
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+.column-header {
+  height: 57px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.column-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.column-title h2 {
+  margin: 0;
+  font-size: .91rem;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
+.status-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #8791a5;
+  box-shadow: 0 0 0 4px rgb(135 145 165 / 13%);
+}
+
+.column-in_progress .status-indicator {
+  background: #e4a735;
+  box-shadow: 0 0 0 4px rgb(228 167 53 / 14%);
+}
+
+.column-done .status-indicator {
+  background: #35a475;
+  box-shadow: 0 0 0 4px rgb(53 164 117 / 14%);
+}
+
+.column-content {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  max-height: calc(100vh - 268px);
+  min-height: 220px;
+  padding: 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.drop-indicator {
+  margin: 0;
+  padding: 10px;
+  border: 2px dashed var(--primary);
+  border-radius: 10px;
+  color: var(--primary);
+  background: var(--surface-soft);
+  font-size: .76rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  .kanban-column {
+    scroll-snap-align: start;
+  }
+
+  .column-content {
+    max-height: calc(100vh - 315px);
+  }
+}
+
+@media (max-width: 600px) {
+  .column-content {
+    max-height: min(58vh, 560px);
+  }
+}

@@ -1,0 +1,62 @@
+@import "../../styles/modal.css";
+
+.danger-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #c53f54;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgb(197 63 84 / 20%);
+}
+
+.danger-button:hover {
+  background: #ad3044;
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.delete-modal {
+  width: min(440px, 100%);
+  text-align: center;
+}
+
+.delete-modal-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 14px;
+  color: #c33e53;
+  background: rgb(195 62 83 / 10%);
+  font-size: 1.2rem;
+  font-weight: 850;
+}
+
+.delete-modal h2 {
+  margin-bottom: 9px;
+  font-size: 1.3rem;
+}
+
+.delete-modal>p:not(.submit-error) {
+  margin: 0 auto 22px;
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.6;
+}
+
+.delete-modal .modal-actions {
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .delete-modal {
+    width: 100%;
+  }
+}
