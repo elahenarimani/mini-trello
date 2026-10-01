@@ -1,6 +1,13 @@
 import type { CreateTaskInput, ReplaceTaskInput, Task, UpdateTaskStatusInput } from "../types/task";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+
+function getTasksUrl(id?: number): string {
+  if (!apiBaseUrl) {
+    throw new Error("آدرس API تنظیم نشده است. مقدار VITE_API_BASE_URL را بررسی کنید.");
+  }
+  return `${apiBaseUrl}/api/tasks${id === undefined ? "" : `/${id}`}`;
+}
 
 async function getResponseError(response: Response, fallback: string): Promise<Error> {
   await response.json().catch(() => null);
@@ -11,13 +18,13 @@ async function getResponseError(response: Response, fallback: string): Promise<E
 }
 
 export async function getTasks(): Promise<Task[]> {
-  const response = await fetch(`${apiBaseUrl}/api/tasks`);
+  const response = await fetch(getTasksUrl());
   if (!response.ok) throw await getResponseError(response, "دریافت تسک‌ها انجام نشد.");
   return response.json() as Promise<Task[]>;
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
-  const response = await fetch(`${apiBaseUrl}/api/tasks`, {
+  const response = await fetch(getTasksUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -31,7 +38,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
 }
 
 export async function updateTask(id: number, input: ReplaceTaskInput): Promise<Task> {
-  const response = await fetch(`${apiBaseUrl}/api/tasks/${id}`, {
+  const response = await fetch(getTasksUrl(id), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -43,14 +50,14 @@ export async function updateTask(id: number, input: ReplaceTaskInput): Promise<T
 }
 
 export async function deleteTask(id: number): Promise<void> {
-  const response = await fetch(`${apiBaseUrl}/api/tasks/${id}`, { method: "DELETE" });
+  const response = await fetch(getTasksUrl(id), { method: "DELETE" });
   if (!response.ok) {
     throw await getResponseError(response, "حذف تسک انجام نشد.");
   }
 }
 
 export async function updateTaskStatus(id: number, input: UpdateTaskStatusInput): Promise<Task> {
-  const response = await fetch(`${apiBaseUrl}/api/tasks/${id}`, {
+  const response = await fetch(getTasksUrl(id), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
