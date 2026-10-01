@@ -6,7 +6,7 @@ Mini Trello یک Kanban Board تمام‌صفحه برای مدیریت تسک�
 
 ## معرفی پروژه
 
-تسک‌ها در سه ستون «برای انجام»، «در حال انجام» و «انجام‌شده» نمایش داده می‌شوند. رابط کاربری عملیات کامل CRUD، تغییر سریع وضعیت، فیلتر و مرتب‌سازی را فراهم می‌کند و Backend داده‌ها را به‌صورت async در یک فایل JSON نگهداری می‌کند.
+تسک‌ها در سه ستون «برای انجام»، «در حال انجام» و «انجام‌شده» نمایش داده می‌شوند. رابط کاربری عملیات کامل CRUD، تغییر سریع وضعیت، فیلتر و مرتب‌سازی را فراهم می‌کند و Backend داده‌ها را در Neon PostgreSQL نگهداری می‌کند.
 
 ## قابلیت‌ها
 
@@ -43,7 +43,7 @@ Mini Trello یک Kanban Board تمام‌صفحه برای مدیریت تسک�
 - Node.js
 - Express 5
 - TypeScript
-- JSON file storage با APIهای async فایل‌سیستم
+- Neon PostgreSQL با `@neondatabase/serverless`، SQL پارامتری و بدون ORM
 - CORS
 - REST API و error handler مرکزی
 
@@ -90,25 +90,31 @@ mini trello/
 └── backend/
     ├── package.json
     ├── tsconfig.json
-    └── backend/
-        ├── data/tasks.json  # storage محلی
-        └── src/
-            ├── controllers/
-            ├── middleware/
-            ├── routes/
-            ├── services/
-            ├── types/
-            ├── app.ts
-            └── server.ts
+    ├── .env.example
+    ├── database/schema.sql
+    ├── tests/backend.test.cjs
+    ├── tests/postgres-smoke.cjs
+    └── src/
+        ├── data/tasks.example.json
+        ├── data/tasks.json  # داده قبلی برای seed، خارج از Git
+        ├── config/database.ts
+        ├── scripts/         # check-database، migrate و seed صریح
+        ├── controllers/
+        ├── middleware/
+        ├── routes/
+        ├── services/
+        ├── types/
+        ├── app.ts
+        └── server.ts
 ```
 
-در Backend، مسیر تودرتوی `backend/backend/` بخشی از ساختار فعلی پروژه است؛ دستورهای npm همچنان از پوشه سطح اول `backend/` اجرا می‌شوند.
+دستورهای npm از پوشه `backend/` اجرا می‌شوند. ورودی Express فایل `src/app.ts` و ورودی اجرای محلی `src/server.ts` است.
 
 ## پیش‌نیازها
 
-- Node.js و npm
+- Node.js نسخه `22.9.0` یا جدیدتر و npm؛ نسخه 24 برای محیط محلی و Vercel مناسب است.
 
-نسخه دقیقی با فیلد `engines` در پروژه قفل نشده است. از نسخه‌ای جدید و سازگار با dependencyهای ثبت‌شده در `package-lock.json` استفاده کنید.
+حداقل نسخه در `backend/package.json` ثبت شده است تا بارگذاری بومی فایل `.env` با `--env-file-if-exists` در دسترس باشد.
 
 ## نصب پروژه
 
@@ -117,7 +123,6 @@ mini trello/
 ```powershell
 cd backend
 npm install
-Copy-Item backend/data/tasks.example.json backend/data/tasks.json
 ```
 
 ```powershell
@@ -135,14 +140,40 @@ VITE_API_BASE_URL=http://localhost:4000
 
 برای اجرای محلی، فایل نمونه را در همان پوشه با نام `.env` کپی کنید. این مقدار هنگام build توسط Vite خوانده می‌شود.
 
-Backend این متغیرهای اختیاری را مستقیماً از محیط process می‌خواند:
+Backend این متغیرها را از محیط process می‌خواند:
 
 | متغیر | مقدار پیش‌فرض | کاربرد |
 | --- | --- | --- |
 | `PORT` | `4000` | پورت HTTP Backend |
-| `CORS_ORIGIN` | `http://localhost:5173` | origin مجاز Frontend |
+| `FRONTEND_URL` | بدون مقدار | origin مجاز Frontend در کنار `http://localhost:5173` |
+| `DATABASE_URL` | ندارد؛ الزامی | connection string پروژه Neon |
 
-Backend در حال حاضر `dotenv` ندارد؛ بنابراین فایل `.env` را خودکار بارگذاری نمی‌کند. برای تغییر مقادیر، آن‌ها را در محیط اجرای process تنظیم کنید.
+فایل نمونه Backend در `backend/.env.example` قرار دارد. برای سازگاری قبلی، در نبود `FRONTEND_URL` مقدار `CORS_ORIGIN` نیز پشتیبانی می‌شود.
+
+دستورهای `dev`، `start` و `db:*` با قابلیت بومی Node فایل `backend/.env` را بارگذاری می‌کنند؛ مقادیر موجود در محیط process اولویت دارند. `.env.local` خودکار بارگذاری نمی‌شود. فایل‌های `.env` و `.env.local` از Git مستثنا هستند. connection string را در source، log، screenshot یا commit قرار ندهید.
+
+## آماده‌سازی Neon و انتقال داده
+
+1. در [Neon Console](https://console.neon.tech) یک پروژه PostgreSQL بسازید و branch، database و role موردنظر را انتخاب کنید. از پنجره **Connect**، connection string را بگیرید.
+2. فایل `backend/.env.example` را فقط در صورت نبود فایل تنظیمات محلی به `backend/.env` کپی کنید و مقدار نمونه `DATABASE_URL` را با مقدار واقعی جایگزین کنید. پارامترهای SSL دریافتی از Neon را حفظ کنید.
+3. از پوشه `backend` این دستورها را به‌ترتیب اجرا کنید؛ تنها پس از موفقیت هر دستور به بعدی بروید:
+
+```powershell
+npm run db:check
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+`db:check` فقط `SELECT 1` را اجرا می‌کند. migration و seed نیز پیش از هر تغییر، اتصال را با همین query تأیید می‌کنند. هیچ‌کدام هنگام import، build یا deploy خودکار اجرا نمی‌شوند. migration با `CREATE TABLE IF NOT EXISTS` جدول را می‌سازد؛ جدول قدیمی با schema متفاوت را خودکار اصلاح نمی‌کند.
+
+schema دارای `BIGINT IDENTITY`، `created_at TIMESTAMPTZ DEFAULT NOW()` و محدودیت enum برای status/priority است. برای حفظ validation قبلی API، title و description از نوع `TEXT` هستند، عنوان باید غیرخالی باشد و توضیح خالی مجاز است. محدودیت جدید طول ۱۰۰/۵۰۰ یا حداقل سه کاراکتر اضافه نشده است.
+
+seed از فایل حفظ‌شده `backend/src/data/tasks.json` می‌خواند و id و createdAt را عیناً منتقل می‌کند. این فایل حاوی ۱۴ Task محلی است و داخل Git نیست؛ در checkout تازه باید فایل داده قبلی را به همین مسیر برگردانید. `tasks.example.json` فقط نمونه خالی است و جایگزین خودکار داده واقعی نمی‌شود.
+
+seed در یک transaction، نوشتن روی جدول را قفل می‌کند، با `ON CONFLICT (id) DO NOTHING` فقط شناسه‌های جدید را درج می‌کند و sequence را حداقل به بزرگ‌ترین id و مقدار قبلی sequence می‌رساند. اجرای مجدد رکورد تکراری نمی‌سازد و رکورد موجود را بازنویسی نمی‌کند. تعداد درج‌شده و شناسه‌های ردشده در پایان گزارش می‌شود. آن را پیش از بازکردن API برای کاربران اجرا کنید؛ شناسه مشترک با رکورد نامرتبط نیز رد می‌شود و باید بررسی شود.
+
+اتصال HTTP از الگوی رسمی [Neon serverless driver](https://github.com/neondatabase/serverless) استفاده می‌کند؛ queryها parameterized هستند و pool جدیدی در هر عملیات ایجاد نمی‌شود.
 
 ## اجرای پروژه
 
@@ -176,6 +207,45 @@ cd backend
 npm run build
 npm start
 ```
+
+API دیگر فایل JSON را نمی‌خواند یا نمی‌نویسد و build نیز داده JSON کپی نمی‌کند. فایل‌های محلی قبلی، از جمله نسخه احتمالی داخل `dist/data`، برای حفظ داده حذف نشده‌اند ولی در runtime استفاده نمی‌شوند. `npm run dev` و `npm start` به همان Database مشخص‌شده در `DATABASE_URL` متصل می‌شوند؛ برای آزمایش از branch جداگانه Neon استفاده کنید.
+
+بررسی‌های بدون Database:
+
+```powershell
+npm run typecheck
+npm run build
+npm test
+```
+
+تست‌ها با `node:test` داخلی Node و database شبیه‌سازی‌شده اجرا می‌شوند؛ framework جدیدی اضافه نشده است. mapper، پارامتری‌بودن queryها، قرارداد HTTP، validation، عدم تغییر createdAt در PUT و جلوگیری از افشای جزئیات خطا بررسی می‌شوند. این تست‌ها تأیید اتصال، اجرای SQL یا CRUD واقعی PostgreSQL نیستند. پس از تنظیم Database، migration، seed مجدد و هر شش endpoint را با یک Task آزمایشی بررسی و آن Task را حذف کنید؛ ۱۴ رکورد اصلی باید دست‌نخورده بمانند.
+
+تست smoke واقعی، جدا از `npm test` و فقط با اجرای صریح فعال می‌شود:
+
+```powershell
+cd backend
+npm run build
+node --env-file=.env tests/postgres-smoke.cjs
+```
+
+این تست به همان ۱۴ تسک اولیه و فایل محلی `src/data/tasks.json` نیاز دارد. تنها یک تسک موقت می‌سازد، CRUD و پاسخ‌های خطا را بررسی می‌کند، آن را حذف می‌کند و سپس seed را دوباره اجرا می‌کند. در پایان برابری تمام فیلدهای ۱۴ تسک اصلی و جلو ماندن sequence بررسی می‌شود. این دستور را هم‌زمان با تغییر داده توسط کاربران اجرا نکنید.
+
+## Backend روی Vercel
+
+| تنظیم | مقدار |
+| --- | --- |
+| Root Directory | `backend` |
+| Framework Preset | `Express` |
+| Install Command | `npm install` |
+| Build Command | `npm run build` |
+| Output Directory | پیش‌فرض؛ override خاموش، نه `public` و نه `dist` |
+| Environment Variable | `FRONTEND_URL=https://your-frontend.vercel.app` |
+| Environment Variable | `DATABASE_URL` واقعی branch موردنظر Neon |
+| Node.js Version | `24.x` |
+
+طبق [مستندات Express در Vercel](https://vercel.com/docs/frameworks/backend/express)، `src/app.ts` با default export ورودی قابل‌شناسایی است؛ تنظیم legacy `builds` لازم نیست. `src/server.ts` فقط اجرای محلی را انجام می‌دهد.
+
+در Settings → Environment Variables پروژه Backend، `DATABASE_URL` و `FRONTEND_URL` را برای محیط‌های موردنظر تنظیم کنید. برای Preview از branch آزمایشی جدا استفاده کنید تا تست‌ها داده Production را تغییر ندهند. ابتدا اتصال، migration، seed و CRUD را تأیید کنید و سپس deploy را به‌صورت صریح انجام دهید. `tasks.json` دیگر storage اصلی production نیست و روی Vercel به نوشتن فایل متکی نیستیم. secret نباید در Git یا متغیرهای `VITE_*` قرار بگیرد.
 
 ## API Endpointها
 
@@ -211,7 +281,7 @@ Frontend هر چهار فیلد قابل‌ویرایش را ارسال می‌�
 
 ### نمونه body برای PUT
 
-در `PUT` ارسال هر پنج فیلد زیر الزامی است. `createdAt` باید ISO 8601 معتبر باشد؛ `id` فقط در URL قرار می‌گیرد و Backend شناسه قبلی را حفظ می‌کند.
+در `PUT` ارسال هر پنج فیلد زیر الزامی است. `createdAt` باید ISO 8601 معتبر باشد؛ `id` فقط در URL قرار می‌گیرد. Backend شناسه و تاریخ اصلی Database را حفظ می‌کند؛ مقدار createdAt ارسالی پس از validation ذخیره نمی‌شود.
 
 ```json
 {
@@ -252,24 +322,23 @@ Frontend هر چهار فیلد قابل‌ویرایش را ارسال می‌�
 
 - پروژه تک‌کاربره است و authentication ندارد.
 - Backend به‌صورت محلی در دسترس Frontend قرار می‌گیرد.
-- داده‌ها در یک فایل JSON ذخیره می‌شوند.
+- داده‌ها در Neon PostgreSQL ذخیره می‌شوند؛ JSON قبلی فقط منبع انتقال صریح داده است.
 - filter و sort کاملاً در Frontend انجام می‌شوند و query parameter به Backend ارسال نمی‌شود.
 - Drag and Drop فقط status را تغییر می‌دهد.
 - مدل Task فیلد `position` یا `order` ندارد؛ بنابراین ترتیب دستی کارت‌ها ذخیره نمی‌شود.
-- `createdAt` در POST توسط Backend ساخته و در PUT از Task موجود حفظ و ارسال می‌شود.
+- `createdAt` در POST توسط Database ساخته می‌شود و در PUT تغییر نمی‌کند؛ mapper، `created_at` را به `createdAt` با ISO UTC تبدیل می‌کند.
 
 ## محدودیت‌ها
 
-- JSON storage برای محیط production، چند instance یا حجم بالای داده مناسب نیست.
+- اتصال Neon و schema آماده، پیش‌نیاز اجرای عملیات Task هستند.
 - authentication و authorization وجود ندارد.
 - ترتیب دستی کارت‌ها قابل ذخیره نیست.
 - HTML5 Drag and Drop روی بعضی دستگاه‌های لمسی محدود است؛ select وضعیت به‌عنوان جایگزین قابل‌دسترسی باقی مانده است.
 - pagination، search، virtual list و realtime update پیاده‌سازی نشده‌اند.
-- تست E2E و تست خودکار Backend در حال حاضر وجود ندارند.
+- تست E2E و تأیید CRUD واقعی PostgreSQL نیازمند محیط Database هستند؛ تست‌های فعلی Backend با query شبیه‌سازی‌شده اجرا می‌شوند.
 
 ## پیشنهادهای بهبود
 
-- جایگزینی JSON با PostgreSQL یا یک database مناسب
 - اضافه‌کردن authentication و authorization
 - افزودن فیلد position و ذخیره ترتیب کارت‌ها
 - اضافه‌کردن pagination یا virtual list برای داده‌های حجیم

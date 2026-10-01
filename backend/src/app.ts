@@ -5,7 +5,11 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" }));
+const allowedOrigins: string[] = ["http://localhost:5173"];
+const frontendUrl = process.env.FRONTEND_URL ?? process.env.CORS_ORIGIN;
+if (frontendUrl) allowedOrigins.push(frontendUrl);
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.get("/", (_req, res) => {

@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
+import { safeErrorCode } from "../config/database.js";
 
 export class AppError extends Error {
   constructor(public readonly statusCode: number, message: string) {
@@ -19,6 +20,7 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     res.status(400).json({ message: "Invalid JSON body" });
     return;
   }
-  console.error(error);
+  // Never log driver messages, SQL, parameters, connection strings, or stacks.
+  console.error("Request failed", { code: safeErrorCode(error) });
   res.status(500).json({ message: "Internal server error" });
 };

@@ -13,8 +13,8 @@ coverage/
 *.log
 logs/
 
-# Local task data (copy tasks.example.json on first setup)
-backend/backend/data/tasks.json
+# Preserved local task data (explicit PostgreSQL seed only)
+backend/src/data/tasks.json
 
 # Editor and operating system files
 .vscode/
@@ -25,3 +25,5 @@ Thumbs.db
 # Local agent settings
 .codex/
 .agents/
+
+.vercel/

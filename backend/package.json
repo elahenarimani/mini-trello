@@ -4,16 +4,24 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch backend/src/server.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "db:check": "node --env-file-if-exists=.env --import tsx src/scripts/check-database.ts",
+    "db:migrate": "node --env-file-if-exists=.env --import tsx src/scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env --import tsx src/scripts/seed.ts",
+    "test": "npm run build && node --test tests/*.test.cjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22.9.0"
+  },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "cors": "^2.8.6",
     "express": "^5.2.1"
   },
